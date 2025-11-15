@@ -6,7 +6,9 @@
 #include "glsl.h"
 #include <time.h>
 #include "glm.h"
-#include <FreeImage.h>
+#define STB_IMAGE_IMPLEMENTATION
+#include <stb/stb_image.h>
+
 
 #define NT 5
 #define NO 10
@@ -41,28 +43,32 @@ public:
     myWindow() {}
 
     // Cargar textura JPG
-    void initialize_textures(int nt, char *nombre)
+    void initialize_textures(int nt, const char *nombre)
+{
+    int w, h, channels;
+
+    stbi_set_flip_vertically_on_load(1); // para imágenes "al revés"
+
+    unsigned char *data = stbi_load(nombre, &w, &h, &channels, 4);
+
+    if (!data)
     {
-        glGenTextures(1, &texid[nt]);
-        glBindTexture(GL_TEXTURE_2D, texid[nt]);
-        glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-
-        FIBITMAP *bitmap = FreeImage_Load(
-            FreeImage_GetFileType(nombre, 0), nombre);
-        FIBITMAP *pImage = FreeImage_ConvertTo32Bits(bitmap);
-
-        int w = FreeImage_GetWidth(pImage);
-        int h = FreeImage_GetHeight(pImage);
-
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, w, h,
-                     0, GL_BGRA, GL_UNSIGNED_BYTE,
-                     FreeImage_GetBits(pImage));
-
-        FreeImage_Unload(pImage);
-        glEnable(GL_TEXTURE_2D);
+        std::cerr << "Error cargando textura: " << nombre << std::endl;
+        return;
     }
+
+    glGenTextures(1, &texid[nt]);
+    glBindTexture(GL_TEXTURE_2D, texid[nt]);
+
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, w, h, 0,
+                 GL_RGBA, GL_UNSIGNED_BYTE, data);
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+    stbi_image_free(data);
+}
+
 
     // Cargar malla
     void openMesh(GLMmodel **ptr, float n, char *file)
@@ -176,23 +182,51 @@ public:
         glClearColor(0.9f, 0.55f, 0.3f, 1.0f); // Fondo atardecer
         glEnable(GL_DEPTH_TEST);
 
-        shader = SM.loadfromFile("vertexshader.txt", "fragmentshader.txt");
-        shader1 = SM.loadfromFile("vertexshaderT.txt", "fragmentshaderT.txt");
+        //shader = SM.loadfromFile("vertexshader.txt", "fragmentshader.txt");
+        //shader1 = SM.loadfromFile("vertexshaderT.txt", "fragmentshaderT.txt");
 
         time0 = clock();
         timer010 = 0.0f;
         bUp = true;
 
-        // Cargar mallas
-        objmodel_ptr = NULL;  openMesh(&objmodel_ptr, 90, "./Mallas/tierra.obj");
-        objmodel_ptr1 = NULL; openMesh(&objmodel_ptr1, 90, "./Mallas/rio.obj");
-        objmodel_ptr2 = NULL; openMesh(&objmodel_ptr2, 90, "./Mallas/cimientosCasa.obj");
-        objmodel_ptr3 = NULL; openMesh(&objmodel_ptr3, 90, "./Mallas/palmeras.obj");
-        objmodel_ptr4 = NULL; openMesh(&objmodel_ptr4, 90, "./Mallas/pisoCasa.obj");
-        objmodel_ptr5 = NULL; openMesh(&objmodel_ptr5, 90, "./Mallas/estructuraCasa.obj");
-        objmodel_ptr6 = NULL; openMesh(&objmodel_ptr6, 90, "./Mallas/techo.obj");
-        objmodel_ptr7 = NULL; openMesh(&objmodel_ptr7, 90, "./Mallas/ventanas.obj");
-        objmodel_ptr8 = NULL; openMesh(&objmodel_ptr8, 90, "./Mallas/pisoDentroCasa.obj");
+        // ----------------- Cargar mallas (INICIALIZAR ANTES) -----------------
+        objmodel_ptr  = NULL;
+        objmodel_ptr1 = NULL;
+        objmodel_ptr2 = NULL;
+        objmodel_ptr3 = NULL;
+        objmodel_ptr4 = NULL;
+        objmodel_ptr5 = NULL;
+        objmodel_ptr6 = NULL;
+        objmodel_ptr7 = NULL;
+        objmodel_ptr8 = NULL;
+
+        std::cout << "Cargando: tierra.obj" << std::endl;
+        openMesh(&objmodel_ptr, 90, (char*) "./Mallas/tierra.obj");
+
+        std::cout << "Cargando: rio.obj" << std::endl;
+        openMesh(&objmodel_ptr1, 90, (char*) "./Mallas/rio.obj");
+
+        std::cout << "Cargando: cimientosCasa.obj" << std::endl;
+        openMesh(&objmodel_ptr2, 90, (char*) "./Mallas/cimientosCasa.obj");
+
+        std::cout << "Cargando: palmeras.obj" << std::endl;
+        openMesh(&objmodel_ptr3, 90, (char*) "./Mallas/palmeras.obj");
+
+        std::cout << "Cargando: pisoCasa.obj" << std::endl;
+        openMesh(&objmodel_ptr4, 90, (char*) "./Mallas/pisoCasa.obj");
+
+        std::cout << "Cargando: estructuraCasa.obj" << std::endl;
+        openMesh(&objmodel_ptr5, 90, (char*) "./Mallas/estructuraCasa.obj");
+
+        std::cout << "Cargando: techo.obj" << std::endl;
+        openMesh(&objmodel_ptr6, 90, (char*) "./Mallas/techo.obj");
+
+        std::cout << "Cargando: ventanas.obj" << std::endl;
+        openMesh(&objmodel_ptr7, 90, (char*) "./Mallas/ventanas.obj");
+
+        std::cout << "Cargando: pisoDentroCasa.obj" << std::endl;
+        openMesh(&objmodel_ptr8, 90, (char*) "./Mallas/pisoDentroCasa.obj");
+
 
         // Texturas
         initialize_textures(0, "./Mallas/cimientosTextura.jpg");
